@@ -87,6 +87,11 @@ function register(router, runtime, ctx) {
     const state = configModule.load(root);
     let svc = null;
     try { svc = service(rt); } catch { /* ignore */ }
+    let bridgeOnline = false;
+    try {
+      const gw = rt.gateways && rt.gateways.get && rt.gateways.get('wechat');
+      bridgeOnline = Boolean(gw && gw.status().bridge.online);
+    } catch { /* ignore */ }
     return json(res, 200, {
       ok: true,
       patch: { version: require('./version').version, base: require('./version').base, file: state.file },
@@ -94,7 +99,7 @@ function register(router, runtime, ctx) {
       chats: chatList(rt),
       diagnostics: {
         stickerReady: Boolean(rt.config.features && rt.config.features.stickers === true),
-        bridge: Boolean(rt.gateway && rt.gateway.wechat && rt.gateway.wechat.status().bridge.online),
+        bridge: bridgeOnline,
         last: svc ? svc.last : null,
         lastError: svc ? svc.lastError : '',
       },
