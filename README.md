@@ -9,6 +9,7 @@
 > 当前适配：**4.1.0**。
 
 > 视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
+> 聊天互通补丁视频：<https://www.bilibili.com/video/BV1bhWv6GEU2/>
 
 ## 功能
 
