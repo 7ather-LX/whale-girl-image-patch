@@ -20,6 +20,10 @@ const PROVIDERS = {
     label: 'Wikimedia Commons（自由版权）',
     desc: '维基共享资源，适合风景、动物、建筑等；保留作者/许可证信息。',
   },
+  bilibili: {
+    label: 'Bilibili 视频封面',
+    desc: '从 B 站搜索结果里取视频封面（图片版权归原作者，仅个人聊天使用）。',
+  },
 };
 
 const DEFAULT_SUBJECTS = [
@@ -32,8 +36,8 @@ const DEFAULT_SUBJECTS = [
     provider: 'safebooru', query: '1girl solo', enabled: true,
   },
   {
-    id: 'shoes', name: '鞋袜 / 足部', aliases: ['脚', '足部', '鞋', '鞋子', '鞋袜', '袜子'],
-    provider: 'openverse', query: 'shoes footwear socks', enabled: true,
+    id: 'shoes', name: '腿足 / 鞋袜', aliases: ['脚', '足部', '腿', '腿足', '鞋', '鞋子', '鞋袜', '袜子'],
+    provider: 'safebooru', query: '1girl legs feet thighhighs -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota -spread_legs -sex -cum -ass -shoes -sneakers -boots -high_heels -sideboob -large_breasts -huge_breasts -bare_shoulders -sleeveless -short_dress -miniskirt -skirt -dress -shorts -bodystocking -bodysuit', enabled: true,
   },
   {
     id: 'cats', name: '猫', aliases: ['猫', '猫咪', '小猫', '猫猫'],
@@ -46,6 +50,10 @@ const DEFAULT_SUBJECTS = [
   {
     id: 'space', name: '星空', aliases: ['星空', '宇宙', '太空', '银河'],
     provider: 'openverse', query: 'space stars galaxy', enabled: true,
+  },
+  {
+    id: 'bili', name: 'B站图片', aliases: ['B站', 'B站图片', '哔哩哔哩', '壁纸'],
+    provider: 'bilibili', query: '动漫 壁纸', enabled: true,
   },
 ];
 
@@ -63,6 +71,7 @@ function defaults() {
     replyText: true,
     cooldownSec: 15,
     maxPerHour: 30,
+    noRepeatMinutes: 1440,
     scope: {
       groups: true,
       privates: false,
@@ -108,18 +117,34 @@ function normalizeSubject(raw, index) {
     name,
     aliases,
     provider: PROVIDERS[s.provider] ? s.provider : 'openverse',
-    query: cleanText(s.query || name, 120),
+    query: cleanText(s.query || name, 400),
     enabled: bool(s.enabled, true),
   };
 }
 
 function normalize(raw) {
   const d = defaults();
-  const src = raw && typeof raw === 'object' ? raw : {};
-  const scope = src.scope && typeof src.scope === 'object' ? src.scope : {};
+  const src = raw && typeof raw === 'object' ? raw : {};  const scope = src.scope && typeof src.scope === 'object' ? src.scope : {};
   const subjects = Array.isArray(src.subjects) && src.subjects.length
     ? src.subjects.map(normalizeSubject)
     : d.subjects;
+  // v1.0.0 的旧默认值：Openverse 的「鞋袜」会搜到运动鞋，和实际想要的腿足不符。
+  // 只迁移完全等于旧默认值的那一条，用户自己改过的分类不动。
+  for (let i = 0; i < subjects.length; i++) {
+    const s = subjects[i];
+    if (s.id === 'shoes' && s.provider === 'openverse' && /shoes footwear socks/i.test(s.query || '')) {
+      const fresh = d.subjects.find((x) => x.id === 'shoes');
+      if (fresh) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
+    } else if (s.id === 'shoes' && s.provider === 'safebooru'
+      && /^1girl legs feet thighhighs/i.test(String(s.query || ''))) {
+      const fresh = d.subjects.find((x) => x.id === 'shoes');
+      if (fresh && fresh.query !== s.query) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
+    }
+  }
+  if ((Number(src.version) || 1) < 2 && !subjects.some((s) => s.id === 'bili')) {
+    const bili = d.subjects.find((s) => s.id === 'bili');
+    if (bili) subjects.push({ ...bili, aliases: bili.aliases.slice() });
+  }
   const overrides = {};
   if (scope.overrides && typeof scope.overrides === 'object') {
     for (const [k, v] of Object.entries(scope.overrides)) {
@@ -127,11 +152,12 @@ function normalize(raw) {
     }
   }
   return {
-    version: 1,
+    version: 2,
     enabled: bool(src.enabled, d.enabled),
     replyText: bool(src.replyText, d.replyText),
     cooldownSec: clamp(src.cooldownSec, 0, 3600, d.cooldownSec),
     maxPerHour: clamp(src.maxPerHour, 1, 500, d.maxPerHour),
+    noRepeatMinutes: clamp(src.noRepeatMinutes, 1, 10080, d.noRepeatMinutes),
     scope: {
       groups: bool(scope.groups, d.scope.groups),
       privates: bool(scope.privates, d.scope.privates),

@@ -80,6 +80,7 @@ function providerOptions(selected) {
     ['openverse', 'Openverse（CC 授权）'],
     ['safebooru', 'Safebooru（安全动漫）'],
     ['wikimedia', 'Wikimedia Commons'],
+    ['bilibili', 'Bilibili 视频封面'],
   ];
   return opts.map(([v, label]) => {
     const o = document.createElement('option');
@@ -186,6 +187,7 @@ function fillForm() {
   $('#privates').checked = !!state.config.scope.privates;
   $('#cooldown').value = state.config.cooldownSec;
   $('#maxPerHour').value = state.config.maxPerHour;
+  $('#noRepeat').value = state.config.noRepeatMinutes;
   renderSubjects();
   renderTestSelect();
   renderChats();
@@ -218,6 +220,7 @@ async function save() {
   state.config.scope.privates = $('#privates').checked;
   state.config.cooldownSec = Number($('#cooldown').value) || 0;
   state.config.maxPerHour = Number($('#maxPerHour').value) || 30;
+  state.config.noRepeatMinutes = Number($('#noRepeat').value) || 1440;
   try {
     const data = await api('/api/image-patch/config', {
       method: 'POST',

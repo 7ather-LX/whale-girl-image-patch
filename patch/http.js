@@ -65,11 +65,11 @@ async function getJson(url, opts = {}) {
   throw last;
 }
 
-async function downloadImage(url, destDir, { maxBytes = 8 * 1024 * 1024, prefix = 'img' } = {}) {
+async function downloadImage(url, destDir, { maxBytes = 8 * 1024 * 1024, prefix = 'img', timeout = 12000 } = {}) {
   let last = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return await downloadOnce(url, destDir, { maxBytes, prefix });
+      return await downloadOnce(url, destDir, { maxBytes, prefix, timeout });
     } catch (err) {
       last = err;
       if (attempt === 0) await new Promise((r) => setTimeout(r, 300));
@@ -78,9 +78,9 @@ async function downloadImage(url, destDir, { maxBytes = 8 * 1024 * 1024, prefix 
   throw last;
 }
 
-async function downloadOnce(url, destDir, { maxBytes, prefix }) {
+async function downloadOnce(url, destDir, { maxBytes, prefix, timeout }) {
   await assertPublicUrl(url);
-  const { res } = await request(url, { headers: { Accept: 'image/*' }, timeout: 20000 });
+  const { res } = await request(url, { headers: { Accept: 'image/*' }, timeout });
   const type = String(res.headers['content-type'] || '').split(';')[0].trim();
   if (type && !isImageMime(type)) {
     res.resume();
@@ -112,4 +112,16 @@ async function downloadOnce(url, destDir, { maxBytes, prefix }) {
   return { path: file, bytes: buf.length, mime, name };
 }
 
-module.exports = { UA, request, getJson, downloadImage };
+async function getText(url, opts = {}) {
+  const { res } = await request(url, { ...opts, headers: { Accept: 'text/html,*/*;q=0.8', ...(opts.headers || {}) } });
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of res) {
+    total += chunk.length;
+    if (total > 3 * 1024 * 1024) throw new Error('HTML response too large');
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+module.exports = { UA, request, getJson, getText, downloadImage };

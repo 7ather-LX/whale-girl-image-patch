@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const cfgmod = require('./config');
 const command = require('./command');
 const providers = require('./providers');
@@ -19,6 +20,8 @@ class ImageService {
     this.hourly = [];
     this.last = null;
     this.lastError = '';
+    this.historyFile = path.join(this.root, 'data', 'whale-image-patch-history.json');
+    this.history = this.loadHistory();
   }
 
   reload() {
@@ -44,6 +47,61 @@ class ImageService {
 
   maxBytes() { return 8 * 1024 * 1024; }
 
+  loadHistory() {
+    try {
+      const data = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
+      const items = data && data.items && typeof data.items === 'object' ? data.items : {};
+      this.history = items;
+      this.pruneHistory();
+      return items;
+    } catch {
+      return {};
+    }
+  }
+
+  pruneHistory() {
+    const cutoff = Date.now() - (Number(this.config.noRepeatMinutes) || 1440) * 60 * 1000;
+    for (const [k, ts] of Object.entries(this.history || {})) {
+      if (!ts || ts < cutoff) delete this.history[k];
+    }
+    const entries = Object.entries(this.history || {}).sort((a, b) => b[1] - a[1]);
+    if (entries.length > 600) this.history = Object.fromEntries(entries.slice(0, 600));
+  }
+
+  saveHistory() {
+    try {
+      this.pruneHistory();
+      fs.mkdirSync(path.dirname(this.historyFile), { recursive: true });
+      const tmp = this.historyFile + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify({ version: 1, items: this.history }, null, 2), 'utf8');
+      fs.renameSync(tmp, this.historyFile);
+    } catch (err) {
+      this.logger.warn?.('[image-patch] history save failed: ' + (err && err.message || err));
+    }
+  }
+
+  hashOf(value) {
+    return crypto.createHash('sha1').update(String(value)).digest('hex').slice(0, 20);
+  }
+
+  historyKey(kind, value) { return kind + ':' + this.hashOf(value); }
+
+  isRecentKey(key) {
+    const ts = this.history && this.history[key];
+    return Boolean(ts && Date.now() - ts < (Number(this.config.noRepeatMinutes) || 1440) * 60 * 1000);
+  }
+
+  isDuplicateHit(hit) {
+    return [hit.url, hit.thumb].filter(Boolean).some((u) => this.isRecentKey(this.historyKey('u', u)));
+  }
+
+  remember(hit, file) {
+    const now = Date.now();
+    for (const u of [hit.url, hit.thumb].filter(Boolean)) this.history[this.historyKey('u', u)] = now;
+    if (file && file.name) this.history[this.historyKey('f', file.name)] = now;
+    this.saveHistory();
+  }
+
   cooldownLeft(chatId) {
     const sec = Number(this.config.cooldownSec) || 0;
     const last = this.cooldown.get(chatId) || 0;
@@ -61,28 +119,46 @@ class ImageService {
     this.hourly.push(Date.now());
   }
 
-  async search(subject) {
-    const list = await providers.search(subject, { timeout: 15000 });
+  async search(subject, page = 1) {
+    const list = await providers.search(subject, { timeout: 15000, page });
     if (!list.length) throw new Error('没有搜到合适的图片');
-    // 取前 8 张，逐张尝试下载；某一图床被墙/502 时换下一张。
-    return list.slice(0, 8);
+    return list.slice(0, 12);
   }
 
   async fetch(subject) {
-    const pool = await this.search(subject);
     let lastErr = null;
-    for (const hit of pool) {
-      for (const url of [hit.thumb, hit.url].filter(Boolean)) {
-        try {
-          const file = await downloadImage(url, this.stickerDir(), { maxBytes: this.maxBytes(), prefix: subject.id });
-          return { ...hit, ...file };
-        } catch (err) {
-          lastErr = err;
-          this.logger.warn?.(`[image-patch] 图片下载失败 ${url.slice(0, 80)}: ${err && err.message || err}`);
+    const started = Date.now();
+    // 同一张图在所有聊天里都不重复：最多换 3 页/3 轮搜索。
+    for (let round = 0; round < 3; round++) {
+      if (Date.now() - started > 45000) break;
+      const page = 1 + Math.floor(Math.random() * 5);
+      let pool;
+      try {
+        pool = await this.search(subject, page);
+      } catch (err) {
+        lastErr = err;
+        continue;
+      }
+      for (const hit of pool.slice(0, 8)) {
+        if (Date.now() - started > 45000) break;
+        if (this.isDuplicateHit(hit)) continue;
+        for (const url of [hit.thumb, hit.url].filter(Boolean)) {
+          try {
+            const file = await downloadImage(url, this.stickerDir(), {
+              maxBytes: this.maxBytes(), prefix: subject.id, timeout: 9000,
+            });
+            if (file && file.name && this.isRecentKey(this.historyKey('f', file.name))) continue;
+            this.remember(hit, file);
+            return { ...hit, ...file };
+          } catch (err) {
+            lastErr = err;
+            this.logger.warn?.(`[image-patch] 图片下载失败 ${url.slice(0, 80)}: ${err && err.message || err}`);
+          }
         }
       }
     }
-    throw lastErr || new Error('没有下载到可用的图片');
+    if (lastErr) throw lastErr;
+    throw new Error('这段时间的图都发过了，换一个类别或稍后再试');
   }
 
   makeJob(msg, file) {
@@ -166,6 +242,8 @@ class ImageService {
       subjects: this.config.subjects,
       cooldownSec: this.config.cooldownSec,
       maxPerHour: this.config.maxPerHour,
+      noRepeatMinutes: this.config.noRepeatMinutes,
+      historyCount: Object.keys(this.history || {}).length,
       stickerReady: Boolean(this.runtime.config.features && this.runtime.config.features.stickers === true),
       last: this.last,
       lastError: this.lastError,

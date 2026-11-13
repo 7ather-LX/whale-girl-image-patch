@@ -56,7 +56,10 @@
       <label class="field">每小时最多发几张
         <input id="maxPerHour" type="number" min="1" max="500" step="1">
       </label>
-      <p class="muted small">建议冷却 10–30 秒，避免刷屏。</p>
+      <label class="field">同一张图不重复（分钟）
+        <input id="noRepeat" type="number" min="1" max="10080" step="10">
+      </label>
+      <p class="muted small">建议冷却 10–30 秒；不重复默认 1440 分钟（24 小时），所有聊天共享记录。</p>
     </section>
 
     <section class="card span2">
