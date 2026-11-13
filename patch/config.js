@@ -136,9 +136,12 @@ function normalize(raw) {
       const fresh = d.subjects.find((x) => x.id === 'shoes');
       if (fresh) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
     } else if (s.id === 'shoes' && s.provider === 'safebooru'
-      && /^1girl legs feet thighhighs/i.test(String(s.query || ''))) {
+      && [
+        '1girl legs feet thighhighs -shoes -sneakers -boots',
+        '1girl legs feet thighhighs -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota',
+      ].includes(String(s.query || ''))) {
       const fresh = d.subjects.find((x) => x.id === 'shoes');
-      if (fresh && fresh.query !== s.query) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
+      if (fresh) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
     }
   }
   if ((Number(src.version) || 1) < 2 && !subjects.some((s) => s.id === 'bili')) {
