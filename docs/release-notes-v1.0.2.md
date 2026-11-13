@@ -5,6 +5,8 @@
 > 必须先安装 **鲸鲸 / Whale Girl**：<https://github.com/Banan1cee/whale_girl>
 > 当前适配：**4.1.0**。
 
+视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
+
 ## 这次新增
 
 - 管理页「回复与频率」新增开关：
