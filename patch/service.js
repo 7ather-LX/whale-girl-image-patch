@@ -20,6 +20,7 @@ class ImageService {
     this.hourly = [];
     this.last = null;
     this.lastError = '';
+    this.fetchBusy = false;
     this.historyFile = path.join(this.root, 'data', 'whale-image-patch-history.json');
     this.history = this.loadHistory();
   }
@@ -126,6 +127,17 @@ class ImageService {
   }
 
   async fetch(subject) {
+    // 跨会话并发时也要串行化：先查重、再下载、再记历史，避免两个群同时拿到同一张。
+    while (this.fetchBusy) await new Promise((r) => setTimeout(r, 40));
+    this.fetchBusy = true;
+    try {
+      return await this.fetchUnlocked(subject);
+    } finally {
+      this.fetchBusy = false;
+    }
+  }
+
+  async fetchUnlocked(subject) {
     let lastErr = null;
     const started = Date.now();
     // 同一张图在所有聊天里都不重复：最多换 3 页/3 轮搜索。
