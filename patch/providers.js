@@ -41,7 +41,7 @@ async function openverse(query, { timeout = 12000, limit = 12, page = 1 } = {}) 
     if (!x || !isHttpImage(x.url)) continue;
     out.push({
       url: x.url,
-      thumb: x.thumbnail || '',
+      thumb: '',
       title: text(x.title || 'Openverse image'),
       creator: text(x.creator || ''),
       license: LICENSE_LABEL[x.license] || text(x.license || 'CC'),

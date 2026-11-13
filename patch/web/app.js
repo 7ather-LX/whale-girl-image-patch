@@ -182,12 +182,12 @@ function renderTestSelect() {
 
 function fillForm() {
   $('#enabled').checked = !!state.config.enabled;
-  $('#enabled').closest('.switch').classList.toggle('on', !!state.config.enabled);
   $('#groups').checked = !!state.config.scope.groups;
   $('#privates').checked = !!state.config.scope.privates;
   $('#cooldown').value = state.config.cooldownSec;
   $('#maxPerHour').value = state.config.maxPerHour;
   $('#noRepeat').value = state.config.noRepeatMinutes;
+  $('#replyText').checked = state.config.replyText !== false;
   renderSubjects();
   renderTestSelect();
   renderChats();
@@ -221,6 +221,7 @@ async function save() {
   state.config.cooldownSec = Number($('#cooldown').value) || 0;
   state.config.maxPerHour = Number($('#maxPerHour').value) || 30;
   state.config.noRepeatMinutes = Number($('#noRepeat').value) || 1440;
+  state.config.replyText = $('#replyText').checked;
   try {
     const data = await api('/api/image-patch/config', {
       method: 'POST',
@@ -262,7 +263,6 @@ function bind() {
   $('#save').addEventListener('click', save);
   $('#enabled').addEventListener('change', () => {
     if (state.config) state.config.enabled = $('#enabled').checked;
-    $('#enabled').closest('.switch').classList.toggle('on', $('#enabled').checked);
   });
   $('#groups').addEventListener('change', () => {
     if (!state.config) return;

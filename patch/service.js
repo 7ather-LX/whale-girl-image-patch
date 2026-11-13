@@ -137,6 +137,26 @@ class ImageService {
     }
   }
 
+  async tryPool(pool, subject, started) {
+    for (const hit of pool.slice(0, 8)) {
+      if (Date.now() - started > 52000) break;
+      if (this.isDuplicateHit(hit)) continue;
+      for (const url of [hit.thumb, hit.url].filter(Boolean)) {
+        try {
+          const file = await downloadImage(url, this.stickerDir(), {
+            maxBytes: this.maxBytes(), prefix: subject.id, timeout: 9000,
+          });
+          if (file && (file.sha1 || file.name) && this.isRecentKey(this.historyKey('f', file.sha1 || file.name))) continue;
+          this.remember(hit, file);
+          return { ...hit, ...file };
+        } catch (err) {
+          this.logger.warn?.(`[image-patch] 图片下载失败 ${url.slice(0, 80)}: ${err && err.message || err}`);
+        }
+      }
+    }
+    return null;
+  }
+
   async fetchUnlocked(subject) {
     let lastErr = null;
     const started = Date.now();
@@ -151,22 +171,19 @@ class ImageService {
         lastErr = err;
         continue;
       }
-      for (const hit of pool.slice(0, 8)) {
-        if (Date.now() - started > 45000) break;
-        if (this.isDuplicateHit(hit)) continue;
-        for (const url of [hit.thumb, hit.url].filter(Boolean)) {
-          try {
-            const file = await downloadImage(url, this.stickerDir(), {
-              maxBytes: this.maxBytes(), prefix: subject.id, timeout: 9000,
-            });
-            if (file && (file.sha1 || file.name) && this.isRecentKey(this.historyKey('f', file.sha1 || file.name))) continue;
-            this.remember(hit, file);
-            return { ...hit, ...file };
-          } catch (err) {
-            lastErr = err;
-            this.logger.warn?.(`[image-patch] 图片下载失败 ${url.slice(0, 80)}: ${err && err.message || err}`);
-          }
-        }
+      const got = await this.tryPool(pool, subject, started);
+      if (got) return got;
+      break;
+    }
+    // 主图库的图床整体打不开时，换一个来源再试一轮（Openverse 的 Flickr 图床经常 502）。
+    if (Date.now() - started < 50000) {
+      const altProvider = subject.provider === 'bilibili' ? 'wikimedia' : 'bilibili';
+      try {
+        const alt = await providers.search({ ...subject, provider: altProvider }, { timeout: 15000, page: 1 + Math.floor(Math.random() * 3) });
+        const got = await this.tryPool(alt, { ...subject, id: subject.id + '-' + altProvider }, started);
+        if (got) return got;
+      } catch (err) {
+        lastErr = err;
       }
     }
     if (lastErr) throw lastErr;
