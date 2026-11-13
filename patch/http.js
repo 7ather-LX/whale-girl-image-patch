@@ -105,11 +105,12 @@ async function downloadOnce(url, destDir, { maxBytes, prefix, timeout }) {
   const mime = sniff(buf) || type;
   if (!isImageMime(mime)) throw new Error('invalid image data');
   const ext = mime === 'image/png' ? '.png' : mime === 'image/webp' ? '.webp' : mime === 'image/gif' ? '.gif' : '.jpg';
+  const sha1 = crypto.createHash('sha1').update(buf).digest('hex');
   fs.mkdirSync(destDir, { recursive: true });
-  const name = `${prefix}-${crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16)}${ext}`;
+  const name = `${prefix}-${sha1.slice(0, 16)}${ext}`;
   const file = path.join(destDir, name);
   if (!fs.existsSync(file)) fs.writeFileSync(file, buf);
-  return { path: file, bytes: buf.length, mime, name };
+  return { path: file, bytes: buf.length, mime, name, sha1 };
 }
 
 async function getText(url, opts = {}) {

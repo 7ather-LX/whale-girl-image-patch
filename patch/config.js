@@ -37,7 +37,7 @@ const DEFAULT_SUBJECTS = [
   },
   {
     id: 'shoes', name: '腿足 / 鞋袜', aliases: ['脚', '足部', '腿', '腿足', '鞋', '鞋子', '鞋袜', '袜子'],
-    provider: 'safebooru', query: '1girl legs feet thighhighs -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota -spread_legs -sex -cum -ass -shoes -sneakers -boots -high_heels -sideboob -large_breasts -huge_breasts -bare_shoulders -sleeveless -short_dress -miniskirt -skirt -dress -shorts -bodystocking -bodysuit', enabled: true,
+    provider: 'safebooru', query: '1girl legs feet thighhighs', enabled: true,
   },
   {
     id: 'cats', name: '猫', aliases: ['猫', '猫咪', '小猫', '猫猫'],
@@ -140,6 +140,10 @@ function normalize(raw) {
         '1girl legs feet thighhighs -shoes -sneakers -boots',
         '1girl legs feet thighhighs -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota',
       ].includes(String(s.query || ''))) {
+      const fresh = d.subjects.find((x) => x.id === 'shoes');
+      if (fresh) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
+    } else if (s.id === 'shoes' && s.provider === 'safebooru'
+      && /^1girl legs feet thighhighs -swimsuit -bikini/i.test(String(s.query || ''))) {
       const fresh = d.subjects.find((x) => x.id === 'shoes');
       if (fresh) subjects[i] = { ...fresh, aliases: fresh.aliases.slice() };
     }

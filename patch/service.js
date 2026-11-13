@@ -98,7 +98,7 @@ class ImageService {
   remember(hit, file) {
     const now = Date.now();
     for (const u of [hit.url, hit.thumb].filter(Boolean)) this.history[this.historyKey('u', u)] = now;
-    if (file && file.name) this.history[this.historyKey('f', file.name)] = now;
+    if (file && (file.sha1 || file.name)) this.history[this.historyKey('f', file.sha1 || file.name)] = now;
     this.saveHistory();
   }
 
@@ -147,7 +147,7 @@ class ImageService {
             const file = await downloadImage(url, this.stickerDir(), {
               maxBytes: this.maxBytes(), prefix: subject.id, timeout: 9000,
             });
-            if (file && file.name && this.isRecentKey(this.historyKey('f', file.name))) continue;
+            if (file && (file.sha1 || file.name) && this.isRecentKey(this.historyKey('f', file.sha1 || file.name))) continue;
             this.remember(hit, file);
             return { ...hit, ...file };
           } catch (err) {
