@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鲸鲸图片补丁</title>
+  <link rel="stylesheet" href="/image-patch/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">图</div>
+      <div>
+        <h1>鲸鲸图片补丁</h1>
+        <p>收到「来张美图」「看看脚」这类指令，就从正规安全图库找图并发送</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="pill" class="pill">连接中…</span>
+      <button id="save" class="primary">保存设置</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card span2">
+      <div class="row">
+        <div>
+          <h2>总开关</h2>
+          <p class="muted">关掉后不再响应任何图片指令；已排队的图片仍可能发出。</p>
+        </div>
+        <label class="switch"><input id="enabled" type="checkbox"><span></span></label>
+      </div>
+      <div class="hint" id="diag">正在读取基础软件状态…</div>
+    </section>
+
+    <section class="card">
+      <h2>在哪里生效</h2>
+      <p class="muted">默认只开群聊。下面可以逐个聊天勾选。</p>
+      <div class="row tight">
+        <label class="check"><input id="groups" type="checkbox"> 全部群聊</label>
+        <label class="check"><input id="privates" type="checkbox"> 全部私聊</label>
+      </div>
+      <div class="chat-tools">
+        <button data-tab="group" class="tab active" id="tabGroup">群聊</button>
+        <button data-tab="private" class="tab" id="tabPrivate">私聊</button>
+        <input id="chatSearch" placeholder="搜索聊天…">
+      </div>
+      <div id="chatList" class="chat-list"><p class="muted">加载中…</p></div>
+    </section>
+
+    <section class="card">
+      <h2>回复与频率</h2>
+      <label class="field">同一聊天冷却（秒）
+        <input id="cooldown" type="number" min="0" max="3600" step="1">
+      </label>
+      <label class="field">每小时最多发几张
+        <input id="maxPerHour" type="number" min="1" max="500" step="1">
+      </label>
+      <p class="muted small">建议冷却 10–30 秒，避免刷屏。</p>
+    </section>
+
+    <section class="card span2">
+      <div class="row">
+        <div>
+          <h2>类别 / 主题</h2>
+          <p class="muted">「美图」默认走风景；也可以给「脚」单独配一个安全类别（鞋袜/足部）。</p>
+        </div>
+        <button id="addSubject" class="ghost">+ 新建类别</button>
+      </div>
+      <div id="subjects" class="subjects"></div>
+    </section>
+
+    <section class="card span2">
+      <h2>试一张</h2>
+      <p class="muted">不会发到微信，只验证图库和网络是否正常。</p>
+      <div class="row tight">
+        <select id="testSubject"></select>
+        <button id="testBtn" class="primary">搜索并预览</button>
+        <span id="testInfo" class="muted"></span>
+      </div>
+      <div id="previewWrap" class="preview-wrap hidden">
+        <img id="preview" alt="预览图">
+        <div id="previewMeta" class="muted small"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/image-patch/app.js"></script>
+</body>
+</html>
