@@ -57,6 +57,44 @@ const DEFAULT_SUBJECTS = [
   },
 ];
 
+/** 可指定到单个角色；tag 使用 Safebooru / Danbooru 通用角色 tag。 */
+const DEFAULT_CHARACTERS = [
+  { id: 'tokai_teio', name: '东海帝皇', aliases: ['东海帝皇', '东海帝王', '東海帝皇', 'tokai teio', 'teio'], tag: 'tokai_teio' },
+  { id: 'mejiro_mcqueen', name: '目白麦昆', aliases: ['目白麦昆', '麦昆', 'mejiro mcqueen'], tag: 'mejiro_mcqueen' },
+  { id: 'special_week', name: '特别周', aliases: ['特别周', '特別週', 'special week'], tag: 'special_week' },
+  { id: 'silence_suzuka', name: '无声铃鹿', aliases: ['无声铃鹿', '無聲鈴鹿', '铃鹿', 'silence suzuka'], tag: 'silence_suzuka' },
+  { id: 'gold_ship', name: '黄金船', aliases: ['黄金船', '黃金船', 'gold ship'], tag: 'gold_ship' },
+  { id: 'kitasan_black', name: '北部玄驹', aliases: ['北部玄驹', '北部玄駒', 'kitasan black'], tag: 'kitasan_black' },
+  { id: 'nice_nature', name: '优秀素质', aliases: ['优秀素质', '優秀素質', 'nice nature'], tag: 'nice_nature' },
+  { id: 'rice_shower', name: '米浴', aliases: ['米浴', 'rice shower'], tag: 'rice_shower' },
+  { id: 'hatsune_miku', name: '初音未来', aliases: ['初音未来', '初音未來', '初音', 'miku', 'hatsune miku'], tag: 'hatsune_miku' },
+  { id: 'rem', name: '雷姆', aliases: ['雷姆', '蕾姆', 'rem'], tag: 'rem_(re:zero)' },
+  { id: 'asuna', name: '亚丝娜', aliases: ['亚丝娜', '亞絲娜', 'asuna', 'yuuki asuna'], tag: 'yuuki_asuna' },
+  { id: 'zero_two', name: '02', aliases: ['02', '零二', 'zero two'], tag: 'zero_two_(darling_in_the_franxx)' },
+  { id: 'frieren', name: '芙莉莲', aliases: ['芙莉莲', '芙莉蓮', 'frieren'], tag: 'frieren' },
+  { id: 'anya', name: '阿尼亚', aliases: ['阿尼亚', '阿尼亞', 'anya', 'anya forger'], tag: 'anya_forger' },
+  { id: 'kurumi', name: '时崎狂三', aliases: ['时崎狂三', '時崎狂三', '狂三', 'kurumi'], tag: 'tokisaki_kurumi' },
+  { id: 'mai', name: '樱岛麻衣', aliases: ['樱岛麻衣', '櫻島麻衣', '麻衣', 'mai'], tag: 'sakurajima_mai' },
+];
+
+/** 角色后面可以跟的动作/属性词，映射到图库 tag。 */
+const DEFAULT_ATTRIBUTES = [
+  { id: 'feet', label: '脚/足', aliases: ['脚', '足', '足部', '脚脚', 'feet', 'foot'], tags: ['barefoot'] },
+  { id: 'legs', label: '腿', aliases: ['腿', '腿部', '大腿', 'legs'], tags: ['thighhighs', 'legs'] },
+  { id: 'thighhighs', label: '裤袜', aliases: ['裤袜', '连裤袜', '丝袜', '过膝袜', 'thighhighs'], tags: ['thighhighs'] },
+  { id: 'black_thighhighs', label: '黑丝', aliases: ['黑丝', '黑色裤袜', 'black thighhighs'], tags: ['black_thighhighs'] },
+  { id: 'white_thighhighs', label: '白丝', aliases: ['白丝', '白色裤袜', 'white thighhighs'], tags: ['white_thighhighs'] },
+  { id: 'school', label: '校服', aliases: ['校服', '制服', 'school uniform'], tags: ['school_uniform'] },
+  { id: 'kimono', label: '和服', aliases: ['和服', '浴衣', 'kimono', 'yukata'], tags: ['kimono'] },
+  { id: 'maid', label: '女仆', aliases: ['女仆', '女僕', 'maid'], tags: ['maid'] },
+  { id: 'wedding', label: '婚纱', aliases: ['婚纱', '婚紗', 'wedding dress'], tags: ['wedding_dress'] },
+  { id: 'cat_ears', label: '猫耳', aliases: ['猫耳', '貓耳', 'cat ears'], tags: ['cat_ears'] },
+  { id: 'glasses', label: '眼镜', aliases: ['眼镜', '眼鏡', 'glasses'], tags: ['glasses'] },
+  { id: 'twintails', label: '双马尾', aliases: ['双马尾', '雙馬尾', 'twintails'], tags: ['twintails'] },
+  { id: 'smile', label: '笑', aliases: ['笑', '微笑', '笑容', 'smile'], tags: ['smile'] },
+  { id: 'idol', label: '偶像/舞台', aliases: ['偶像', '舞台', '演出', 'idol', 'stage'], tags: ['idol', 'stage'] },
+];
+
 /** 命中这些词的请求直接拒绝（不搜索、不发送）。 */
 const BLOCKED_TERMS = [
   '裸', '色情', '成人', '黄图', '涩图', '做爱', '性交', '生殖器', '阴部', '胸部',
@@ -78,6 +116,8 @@ function defaults() {
       overrides: {},
     },
     subjects: DEFAULT_SUBJECTS.map((s) => ({ ...s, aliases: s.aliases.slice() })),
+    characters: DEFAULT_CHARACTERS.map((s) => ({ ...s, aliases: s.aliases.slice() })),
+    attributes: DEFAULT_ATTRIBUTES.map((s) => ({ ...s, aliases: s.aliases.slice(), tags: s.tags.slice() })),
     providers: Object.keys(PROVIDERS),
     theme: 'auto',
   };
@@ -122,6 +162,36 @@ function normalizeSubject(raw, index) {
   };
 }
 
+function normalizeCharacter(raw, index) {
+  const s = raw && typeof raw === 'object' ? raw : {};
+  const name = cleanText(s.name || s.id || '未命名角色', 30);
+  let id = cleanText(s.id || s.tag || name, 40).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!id) id = 'c' + (index + 1);
+  const aliases = Array.isArray(s.aliases)
+    ? s.aliases.map((x) => cleanText(x, 30)).filter(Boolean).slice(0, 24)
+    : String(s.aliases || '').split(/[,，、\s]+/).map((x) => cleanText(x, 30)).filter(Boolean).slice(0, 24);
+  if (name && !aliases.includes(name)) aliases.unshift(name);
+  let tag = cleanText(s.tag || '', 80).toLowerCase()
+    .replace(/[\s/]+/g, '_')
+    .replace(/[^a-z0-9_():-]+/g, '')
+    .slice(0, 80);
+  if (!tag) tag = name.toLowerCase().replace(/[^a-z0-9_]+/g, '_') || id;
+  return { id, name, aliases, tag, enabled: bool(s.enabled, true) };
+}
+
+function normalizeAttribute(raw, index) {
+  const s = raw && typeof raw === 'object' ? raw : {};
+  const label = cleanText(s.label || s.name || s.id || '属性', 20);
+  const id = cleanText(s.id || label, 30).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || ('a' + (index + 1));
+  const aliases = Array.isArray(s.aliases)
+    ? s.aliases.map((x) => cleanText(x, 20)).filter(Boolean).slice(0, 20)
+    : String(s.aliases || '').split(/[,，、\s]+/).map((x) => cleanText(x, 20)).filter(Boolean).slice(0, 20);
+  const tags = Array.isArray(s.tags)
+    ? s.tags.map((x) => cleanText(x, 40).toLowerCase().replace(/\s+/g, '_')).filter((x) => /^[a-z0-9_():-]+$/.test(x)).slice(0, 8)
+    : String(s.tags || '').split(/[,，、\s]+/).map((x) => cleanText(x, 40).toLowerCase().replace(/\s+/g, '_')).filter((x) => /^[a-z0-9_():-]+$/.test(x)).slice(0, 8);
+  return { id, label, aliases, tags, enabled: bool(s.enabled, true) };
+}
+
 function normalize(raw) {
   const d = defaults();
   const src = raw && typeof raw === 'object' ? raw : {};  const scope = src.scope && typeof src.scope === 'object' ? src.scope : {};
@@ -158,8 +228,14 @@ function normalize(raw) {
       if (typeof k === 'string' && k.length <= 160) overrides[k] = bool(v, false);
     }
   }
+  const characters = Array.isArray(src.characters)
+    ? src.characters.map(normalizeCharacter).filter((x) => x.name)
+    : d.characters.map((x) => ({ ...x, aliases: x.aliases.slice() }));
+  const attributes = Array.isArray(src.attributes) && src.attributes.length
+    ? src.attributes.map(normalizeAttribute).filter((x) => x.aliases.length && x.tags.length)
+    : d.attributes.map((x) => ({ ...x, aliases: x.aliases.slice(), tags: x.tags.slice() }));
   return {
-    version: 2,
+    version: 3,
     enabled: bool(src.enabled, d.enabled),
     replyText: bool(src.replyText, d.replyText),
     cooldownSec: clamp(src.cooldownSec, 0, 3600, d.cooldownSec),
@@ -171,6 +247,8 @@ function normalize(raw) {
       overrides,
     },
     subjects,
+    characters,
+    attributes,
     providers: Object.keys(PROVIDERS),
     theme: src.theme === 'light' ? 'light' : 'auto',
   };
@@ -214,6 +292,60 @@ function isChatEnabled(cfg, chatId, chatType) {
   return base === true;
 }
 
+function findCharacter(cfg, text) {
+  const needle = String(text || '').toLowerCase();
+  let best = null;
+  for (const c of cfg.characters || []) {
+    if (c.enabled === false) continue;
+    for (const a of c.aliases || []) {
+      const alias = String(a).toLowerCase().trim();
+      if (!alias) continue;
+      if (needle === alias || needle.includes(alias)) {
+        if (!best || alias.length > best.alias.length) best = { character: c, alias };
+      }
+    }
+  }
+  return best ? best.character : null;
+}
+
+function findAttributes(cfg, text) {
+  const s = String(text || '').toLowerCase();
+  const out = [];
+  const seen = new Set();
+  for (const a of cfg.attributes || []) {
+    if (a.enabled === false) continue;
+    const aliases = (a.aliases || []).map((x) => String(x).toLowerCase()).sort((x, y) => y.length - x.length);
+    if (aliases.some((alias) => alias && s.includes(alias)) && !seen.has(a.id)) {
+      seen.add(a.id);
+      out.push(a);
+    }
+  }
+  return out;
+}
+
+function characterSubject(character, attributes = []) {
+  const attrTags = [];
+  for (const a of attributes) for (const tag of a.tags || []) if (!attrTags.includes(tag)) attrTags.push(tag);
+  const base = [character.tag, ...attrTags, '1girl', 'solo'].filter(Boolean).join(' ');
+  const withoutSolo = [character.tag, ...attrTags, '1girl'].filter(Boolean).join(' ');
+  const onlyCharacter = [character.tag, '1girl', 'solo'].filter(Boolean).join(' ');
+  const labels = attributes.map((a) => a.label).filter(Boolean);
+  return {
+    id: 'char-' + String(character.tag || character.id).replace(/[^a-z0-9_-]+/gi, '-').slice(0, 30),
+    name: character.name + (labels.length ? ' · ' + labels.join('/') : ''),
+    provider: 'safebooru',
+    query: base,
+    queries: [...new Set([base, withoutSolo, onlyCharacter, character.tag].filter(Boolean))],
+    fallbackQueries: [[character.name, ...labels].filter(Boolean).join(' '), character.name],
+    minWidth: 500,
+    minHeight: 500,
+    minScore: 0,
+    character: character.id,
+    attributes: attributes.map((a) => a.id),
+    enabled: true,
+  };
+}
+
 function findSubject(cfg, text) {
   const needle = String(text || '').toLowerCase();
   let best = null;
@@ -246,8 +378,8 @@ function hash(s) {
 }
 
 module.exports = {
-  FILE, PROVIDERS, DEFAULT_SUBJECTS, BLOCKED_TERMS,
+  FILE, PROVIDERS, DEFAULT_SUBJECTS, DEFAULT_CHARACTERS, DEFAULT_ATTRIBUTES, BLOCKED_TERMS,
   defaults, normalize, load, save, ensure, isChatEnabled,
-  findSubject, defaultSubject, blocked, hash, fileFor,
+  findSubject, findCharacter, findAttributes, characterSubject, defaultSubject, blocked, hash, fileFor,
   version,
 };

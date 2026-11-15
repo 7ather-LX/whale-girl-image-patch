@@ -121,9 +121,26 @@ class ImageService {
   }
 
   async search(subject, page = 1) {
-    const list = await providers.search(subject, { timeout: 15000, page });
-    if (!list.length) throw new Error('没有搜到合适的图片');
-    return list.slice(0, 12);
+    const queries = Array.isArray(subject.queries) && subject.queries.length
+      ? subject.queries
+      : [subject.query];
+    let firstError = null;
+    for (const query of queries) {
+      try {
+        const list = await providers.search({ ...subject, query }, {
+          timeout: 15000,
+          page,
+          minWidth: subject.minWidth,
+          minHeight: subject.minHeight,
+          minScore: subject.minScore,
+        });
+        if (list.length) return list.slice(0, 12);
+      } catch (err) {
+        if (!firstError) firstError = err;
+      }
+    }
+    if (firstError) throw firstError;
+    throw new Error('没有搜到合适的图片');
   }
 
   async fetch(subject) {
@@ -178,8 +195,15 @@ class ImageService {
     // 主图库的图床整体打不开时，换一个来源再试一轮（Openverse 的 Flickr 图床经常 502）。
     if (Date.now() - started < 50000) {
       const altProvider = subject.provider === 'bilibili' ? 'wikimedia' : 'bilibili';
+      const altQuery = (subject.fallbackQueries && subject.fallbackQueries[0]) || subject.query;
       try {
-        const alt = await providers.search({ ...subject, provider: altProvider }, { timeout: 15000, page: 1 + Math.floor(Math.random() * 3) });
+        const alt = await providers.search({ ...subject, query: altQuery, provider: altProvider }, {
+          timeout: 15000,
+          page: 1 + Math.floor(Math.random() * 3),
+          minWidth: subject.minWidth,
+          minHeight: subject.minHeight,
+          minScore: subject.minScore,
+        });
         const got = await this.tryPool(alt, { ...subject, id: subject.id + '-' + altProvider }, started);
         if (got) return got;
       } catch (err) {

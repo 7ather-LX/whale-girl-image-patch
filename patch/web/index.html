@@ -66,6 +66,18 @@
     <section class="card span2">
       <div class="row">
         <div>
+          <h2>角色对象</h2>
+          <p class="muted">指定到单个角色：名称 / 别名会匹配指令，tag 用 Safebooru 角色标签。
+            例如「看看东海帝皇的脚」= 角色 + 足部属性。</p>
+        </div>
+        <button id="addCharacter" class="ghost">+ 新建角色</button>
+      </div>
+      <div id="characters" class="subjects"></div>
+    </section>
+
+    <section class="card span2">
+      <div class="row">
+        <div>
           <h2>类别 / 主题</h2>
           <p class="muted">「美图」默认走风景；也可以给「脚」单独配一个安全类别（鞋袜/足部）。</p>
         </div>
@@ -79,6 +91,8 @@
       <p class="muted">不会发到微信，只验证图库和网络是否正常。</p>
       <div class="row tight">
         <select id="testSubject"></select>
+        <select id="testCharacter"><option value="">— 角色对象 —</option></select>
+        <input id="testAttr" placeholder="属性，如：脚（可留空）" style="max-width:180px">
         <button id="testBtn" class="primary">搜索并预览</button>
         <span id="testInfo" class="muted"></span>
       </div>

@@ -64,7 +64,16 @@ function parse(text, config) {
   if (bad) return { ok: false, reason: 'blocked', blocked: bad };
 
   let subject = null;
-  if (subjectText) subject = cfg.findSubject(config, subjectText);
+  let character = null;
+  let attributes = [];
+  if (subjectText) {
+    character = cfg.findCharacter(config, subjectText);
+    if (character) {
+      attributes = cfg.findAttributes(config, subjectText);
+      subject = cfg.characterSubject(character, attributes);
+    }
+  }
+  if (!subject && subjectText) subject = cfg.findSubject(config, subjectText);
   if (!subject && /美图|图片|图/.test(matched + subjectText)) subject = cfg.defaultSubject(config);
   if (!subject) {
     return {
@@ -75,7 +84,7 @@ function parse(text, config) {
       unknownSubject: subjectText || '',
     };
   }
-  return { ok: true, matched, subjectText, subject };
+  return { ok: true, matched, subjectText, subject, character, attributes };
 }
 
 module.exports = { parse, cleanInput, stripFillers };

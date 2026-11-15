@@ -89,7 +89,7 @@ async function wikimedia(query, { timeout = 12000, limit = 12 } = {}) {
   return out;
 }
 
-async function safebooru(query, { timeout = 12000, limit = 20, page = 1 } = {}) {
+async function safebooru(query, { timeout = 12000, limit = 20, page = 1, minWidth = 500, minHeight = 500, minScore = 0 } = {}) {
   const tags = `rating:safe ${query} -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota -spread_legs -sex -cum -ass -shoes -sneakers -boots`;
   const q = new URLSearchParams({
     page: 'dapi', s: 'post', q: 'index', json: '1', limit: String(limit), pid: String(Math.max(1, page) - 1), tags,
@@ -101,7 +101,8 @@ async function safebooru(query, { timeout = 12000, limit = 20, page = 1 } = {}) 
   for (const x of rows) {
     const url = x.file_url || x.sample_url;
     if (!isHttpImage(url)) continue;
-    if (Number(x.width) < 500 || Number(x.height) < 500) continue;
+    if (Number(x.width) < Number(minWidth) || Number(x.height) < Number(minHeight)) continue;
+    if (Number(x.score || 0) < Number(minScore || 0)) continue;
     const tags = String(x.tags || '');
     if (BAD_TAG.test(tags)) continue;
     out.push({
@@ -112,8 +113,13 @@ async function safebooru(query, { timeout = 12000, limit = 20, page = 1 } = {}) 
       source: 'Safebooru',
       page: x.source || `https://safebooru.org/index.php?page=post&s=view&id=${x.id}`,
       provider: 'safebooru',
+      score: Number(x.score || 0),
+      width: Number(x.width || 0),
+      height: Number(x.height || 0),
     });
   }
+  // 画质优先：分数高的先试，同分则面积大的先试。
+  out.sort((a, b) => (b.score - a.score) || (b.width * b.height - a.width * a.height));
   return out;
 }
 

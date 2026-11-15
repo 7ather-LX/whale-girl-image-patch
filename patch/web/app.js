@@ -91,6 +91,71 @@ function providerOptions(selected) {
   });
 }
 
+function renderCharacters() {
+  const wrap = $('#characters');
+  wrap.textContent = '';
+  (state.config.characters || []).forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = 'subject';
+    const head = document.createElement('div');
+    head.className = 'subject-head';
+    const strong = document.createElement('strong');
+    strong.textContent = c.name || ('角色 ' + (idx + 1));
+    const del = document.createElement('button');
+    del.className = 'danger';
+    del.textContent = '删除';
+    del.addEventListener('click', () => {
+      state.config.characters.splice(idx, 1);
+      renderCharacters();
+      renderTestSelect();
+    });
+    head.append(strong, del);
+
+    const name = document.createElement('input');
+    name.type = 'text';
+    name.value = c.name || '';
+    name.placeholder = '角色名，如：东海帝皇';
+    name.addEventListener('input', () => { c.name = name.value; strong.textContent = name.value || '角色'; renderTestSelect(); });
+
+    const aliases = document.createElement('input');
+    aliases.type = 'text';
+    aliases.value = (c.aliases || []).join('、');
+    aliases.placeholder = '别名，用、分隔，如：东海帝皇、东海帝王、teio';
+    aliases.addEventListener('input', () => {
+      c.aliases = aliases.value.split(/[、,，\s]+/).map((x) => x.trim()).filter(Boolean);
+    });
+
+    const tag = document.createElement('input');
+    tag.type = 'text';
+    tag.value = c.tag || '';
+    tag.placeholder = 'Safebooru 角色 tag，如：tokai_teio';
+    tag.addEventListener('input', () => { c.tag = tag.value; });
+
+    const enabled = document.createElement('label');
+    enabled.className = 'check';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = c.enabled !== false;
+    cb.addEventListener('change', () => { c.enabled = cb.checked; });
+    enabled.append(cb, document.createTextNode(' 启用这个角色'));
+
+    const field = (label, node) => {
+      const f = document.createElement('label');
+      f.className = 'field';
+      f.append(document.createTextNode(label), node);
+      return f;
+    };
+    card.append(head, field('名称', name), field('别名（指令里出现就命中）', aliases), field('Safebooru 角色 tag', tag), enabled);
+    wrap.append(card);
+  });
+  if (!(state.config.characters || []).length) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = '还没有角色对象，点右上角「新建角色」。';
+    wrap.append(p);
+  }
+}
+
 function renderSubjects() {
   const wrap = $('#subjects');
   wrap.textContent = '';
@@ -178,6 +243,21 @@ function renderTestSelect() {
     o.textContent = s.name;
     sel.append(o);
   }
+  const csel = $('#testCharacter');
+  if (csel) {
+    csel.textContent = '';
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = '— 角色对象 —';
+    csel.append(empty);
+    for (const c of state.config.characters || []) {
+      if (c.enabled === false) continue;
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.name;
+      csel.append(o);
+    }
+  }
 }
 
 function fillForm() {
@@ -188,6 +268,7 @@ function fillForm() {
   $('#maxPerHour').value = state.config.maxPerHour;
   $('#noRepeat').value = state.config.noRepeatMinutes;
   $('#replyText').checked = state.config.replyText !== false;
+  renderCharacters();
   renderSubjects();
   renderTestSelect();
   renderChats();
@@ -236,15 +317,24 @@ async function save() {
 }
 
 async function test() {
+  const characterId = $('#testCharacter') ? $('#testCharacter').value : '';
+  const attr = $('#testAttr') ? $('#testAttr').value.trim() : '';
   const id = $('#testSubject').value;
-  if (!id) return toast('先建一个类别', true);
+  let body = { subjectId: id };
+  if (characterId) {
+    const ch = (state.config.characters || []).find((x) => x.id === characterId);
+    if (!ch) return toast('角色不存在', true);
+    body = { command: `看看${ch.name}${attr ? '的' + attr : ''}` };
+  } else if (!id) {
+    return toast('先建一个类别或角色', true);
+  }
   const btn = $('#testBtn');
   btn.disabled = true;
   btn.textContent = '搜索中…';
   try {
     const data = await api('/api/image-patch/test', {
       method: 'POST',
-      body: JSON.stringify({ subjectId: id }),
+      body: JSON.stringify(body),
     });
     $('#preview').src = data.image + '?t=' + Date.now();
     $('#previewMeta').textContent = [data.source, data.creator, data.license].filter(Boolean).join(' · ');
@@ -280,6 +370,19 @@ function bind() {
     renderChats();
   }));
   $('#chatSearch').addEventListener('input', (e) => { state.query = e.target.value.trim(); renderChats(); });
+  $('#addCharacter').addEventListener('click', () => {
+    if (!state.config) return;
+    state.config.characters = state.config.characters || [];
+    state.config.characters.push({
+      id: 'custom-' + Date.now().toString(36),
+      name: '新角色',
+      aliases: [],
+      tag: '',
+      enabled: true,
+    });
+    renderCharacters();
+    renderTestSelect();
+  });
   $('#addSubject').addEventListener('click', () => {
     if (!state.config) return;
     state.config.subjects.push({

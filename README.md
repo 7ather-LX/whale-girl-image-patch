@@ -8,7 +8,7 @@
 > 必须先安装 **鲸鲸 / Whale Girl**：<https://github.com/Banan1cee/whale_girl>
 > 当前适配：**4.1.2**。
 
-> **最新版：v1.0.5** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.0.5)
+> **最新版：v1.1.0** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.1.0)
 
 > 视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
 > 聊天互通补丁视频：<https://www.bilibili.com/video/BV1bhWv6GEU2/>
@@ -16,6 +16,8 @@
 ## 功能
 
 - **按指令发图**：`来张美图`、`看看脚`、`来张风景`、`来张动漫少女`、`看看猫`…
+- **指定单一角色 + 属性组合**：`看看东海帝皇的脚`、`来张东海帝皇的黑丝`、`看看初音未来的校服`；
+  内置 16 个角色，其他角色可在管理页填 Safebooru 角色 tag 添加。
 - **每个聊天单独开关**：群聊 / 私聊分别控制，也可以逐个聊天勾选。
 - **同一张图不重复**：默认 24 小时内所有聊天共享去重记录，不会两个群收到同一张。
 - **类别可编辑**：名称、指令词、图库来源、搜索词都能改；可以新建「猫 / 美食 / 星空 / 腿足」等类别。
@@ -83,6 +85,9 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -AppRoot "D:\WhaleGirl"
 ```text
 @鲸鲸 来张美图
 @鲸鲸 看看脚
+@鲸鲸 看看东海帝皇的脚
+@鲸鲸 来张东海帝皇的黑丝
+@鲸鲸 看看初音未来的校服
 @鲸鲸 来张风景
 @鲸鲸 来张动漫少女
 @鲸鲸 看看猫
@@ -104,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -AppRoot "D:\WhaleGirl"
 - 新建/删除类别，改名称、指令词、图库、搜索词（图库含 Bilibili 视频封面）；
 - 调冷却、每小时上限、同一张图不重复时间；
 - 开关「发图前先发一条类型/作者文字」；
-- 「试一张」：只搜索预览，不发微信。
+- 「试一张」：只搜索预览，不发微信；可以选择角色并输入「脚」等属性。
 
 ## 安全与版权
 
