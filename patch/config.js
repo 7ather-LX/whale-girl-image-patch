@@ -339,7 +339,7 @@ function characterSubject(character, attributes = []) {
     query: base,
     queries: [...new Set([base, withoutSolo, ...perAttribute, onlyCharacter, character.tag].filter(Boolean))],
     fallbackQueries: [[character.name, ...labels].filter(Boolean).join(' '), character.name],
-    minWidth: 400,
+    minWidth: 500,
     minHeight: 600,
     minScore: 0,
     character: character.id,
