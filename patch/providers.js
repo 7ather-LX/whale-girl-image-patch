@@ -96,7 +96,7 @@ async function safebooru(query, { timeout = 12000, limit = 20, page = 1, minWidt
   });
   const data = await getJson(SAFEBOORU + '?' + q.toString(), { timeout });
   const rows = Array.isArray(data) ? data : (data && Array.isArray(data.post) ? data.post : []);
-  const BAD_TAG = /(?:^|\s)(swimsuit|bikini|lingerie|underwear|cleavage|sideboob|large_breasts|huge_breasts|nude|topless|ass|spread_legs|sex|cum|panties|bodystocking|bodysuit|bare_shoulders|sleeveless|short_dress|miniskirt|high_heels)(?:\s|$)/;
+  const BAD_TAG = /(?:^|\s)(swimsuit|bikini|lingerie|underwear|cleavage|sideboob|large_breasts|huge_breasts|nude|topless|ass|spread_legs|sex|cum|panties|bodystocking|bodysuit)(?:\s|$)/;
   const out = [];
   for (const x of rows) {
     const url = x.file_url || x.sample_url;

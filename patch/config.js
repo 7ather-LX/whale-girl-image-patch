@@ -330,16 +330,17 @@ function characterSubject(character, attributes = []) {
   const base = [character.tag, ...attrTags, '1girl', 'solo'].filter(Boolean).join(' ');
   const withoutSolo = [character.tag, ...attrTags, '1girl'].filter(Boolean).join(' ');
   const onlyCharacter = [character.tag, '1girl', 'solo'].filter(Boolean).join(' ');
+  const perAttribute = attrTags.map((tag) => [character.tag, tag, '1girl', 'solo'].filter(Boolean).join(' '));
   const labels = attributes.map((a) => a.label).filter(Boolean);
   return {
     id: 'char-' + String(character.tag || character.id).replace(/[^a-z0-9_-]+/gi, '-').slice(0, 30),
     name: character.name + (labels.length ? ' · ' + labels.join('/') : ''),
     provider: 'safebooru',
     query: base,
-    queries: [...new Set([base, withoutSolo, onlyCharacter, character.tag].filter(Boolean))],
+    queries: [...new Set([base, withoutSolo, ...perAttribute, onlyCharacter, character.tag].filter(Boolean))],
     fallbackQueries: [[character.name, ...labels].filter(Boolean).join(' '), character.name],
-    minWidth: 500,
-    minHeight: 500,
+    minWidth: 400,
+    minHeight: 600,
     minScore: 0,
     character: character.id,
     attributes: attributes.map((a) => a.id),

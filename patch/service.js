@@ -125,6 +125,8 @@ class ImageService {
       ? subject.queries
       : [subject.query];
     let firstError = null;
+    const all = [];
+    const seen = new Set();
     for (const query of queries) {
       try {
         const list = await providers.search({ ...subject, query }, {
@@ -134,11 +136,19 @@ class ImageService {
           minHeight: subject.minHeight,
           minScore: subject.minScore,
         });
-        if (list.length) return list.slice(0, 12);
+        for (const hit of list) {
+          const key = hit.url || hit.thumb;
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          all.push(hit);
+          if (all.length >= 12) break;
+        }
+        if (all.length >= 12) break;
       } catch (err) {
         if (!firstError) firstError = err;
       }
     }
+    if (all.length) return all;
     if (firstError) throw firstError;
     throw new Error('没有搜到合适的图片');
   }
@@ -155,7 +165,7 @@ class ImageService {
   }
 
   async tryPool(pool, subject, started) {
-    for (const hit of pool.slice(0, 8)) {
+    for (const hit of pool.slice(0, 12)) {
       if (Date.now() - started > 52000) break;
       if (this.isDuplicateHit(hit)) continue;
       for (const url of [hit.thumb, hit.url].filter(Boolean)) {
@@ -180,7 +190,7 @@ class ImageService {
     // 同一张图在所有聊天里都不重复：最多换 3 页/3 轮搜索。
     for (let round = 0; round < 3; round++) {
       if (Date.now() - started > 45000) break;
-      const page = 1 + Math.floor(Math.random() * 5);
+      const page = subject.character ? 1 : (1 + Math.floor(Math.random() * 5));
       let pool;
       try {
         pool = await this.search(subject, page);
