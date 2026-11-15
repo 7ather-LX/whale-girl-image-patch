@@ -340,7 +340,7 @@ function characterSubject(character, attributes = []) {
     provider: 'safebooru',
     query: base,
     queries: [...new Set([base, withoutSolo, ...perAttribute, onlyCharacter, character.tag].filter(Boolean))],
-    fallbackQueries: [[character.name, ...labels].filter(Boolean).join(' '), character.name],
+    fallbackQueries: [character.name, [character.name, ...labels].filter(Boolean).join(' ')],
     minWidth: 500,
     minHeight: 600,
     minScore: 0,

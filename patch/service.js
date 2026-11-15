@@ -116,7 +116,7 @@ class ImageService {
       id: 'dynamic-' + this.hashOf(name).slice(0, 10),
       name: name + (labels.length ? ' · ' + labels.join('/') : ''),
       provider: 'bilibili',
-      query: [name, ...labels].join(' '),
+      query: name,
       fallbackQueries: [name],
       minWidth: 400,
       minHeight: 300,
