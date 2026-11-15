@@ -241,7 +241,7 @@ Write-Host ""
 Write-Host "Installed successfully." -ForegroundColor Green
 Write-Host ""
 Write-Host "  Last step: FULLY EXIT the WhaleGirl launcher (tray icon -> Exit), then open it again."
-Write-Host "  Click Start, then the '图片' tab (or open http://127.0.0.1:$port/image-patch/)."
+Write-Host "  Open http://127.0.0.1:$port/image-patch/ in your browser."
 Write-Host "  Then try in a selected chat: @鲸鲸 来张美图 / 看看脚"
 Write-Host ""
 Write-Host "  Self-check: `"$node`" `"$AppRoot\whale-image-patch\cli.js`" doctor"
