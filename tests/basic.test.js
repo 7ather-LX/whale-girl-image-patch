@@ -42,9 +42,9 @@ test('未配置类别给出提示', () => {
   assert.equal(p.unknownSubject, '外星人');
 });
 
-test('聊天开关：默认群聊开、私聊关，可逐个覆盖', () => {
+test('聊天开关：默认群聊/私聊都开，可逐个覆盖', () => {
   assert.equal(config.isChatEnabled(cfg, 'g1', 'group'), true);
-  assert.equal(config.isChatEnabled(cfg, 'u1', 'private'), false);
+  assert.equal(config.isChatEnabled(cfg, 'u1', 'private'), true);
   const c = config.normalize({ ...cfg, scope: { ...cfg.scope, overrides: { g1: false, u1: true } } });
   assert.equal(config.isChatEnabled(c, 'g1', 'group'), false);
   assert.equal(config.isChatEnabled(c, 'u1', 'private'), true);

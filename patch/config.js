@@ -112,7 +112,7 @@ function defaults() {
     noRepeatMinutes: 1440,
     scope: {
       groups: true,
-      privates: false,
+      privates: true,
       overrides: {},
     },
     subjects: DEFAULT_SUBJECTS.map((s) => ({ ...s, aliases: s.aliases.slice() })),
@@ -236,7 +236,7 @@ function normalize(raw) {
     ? src.attributes.map(normalizeAttribute).filter((x) => x.aliases.length && x.tags.length)
     : d.attributes.map((x) => ({ ...x, aliases: x.aliases.slice(), tags: x.tags.slice() }));
   return {
-    version: 3,
+    version: 4,
     enabled: bool(src.enabled, d.enabled),
     replyText: bool(src.replyText, d.replyText),
     cooldownSec: clamp(src.cooldownSec, 0, 3600, d.cooldownSec),
@@ -244,7 +244,8 @@ function normalize(raw) {
     noRepeatMinutes: clamp(src.noRepeatMinutes, 1, 10080, d.noRepeatMinutes),
     scope: {
       groups: bool(scope.groups, d.scope.groups),
-      privates: bool(scope.privates, d.scope.privates),
+      // v4：旧版默认私聊关闭，很多人以为是 bug；升级时默认打开，用户仍可在管理页关掉。
+      privates: (Number(src.version) || 0) < 4 ? true : bool(scope.privates, d.scope.privates),
       overrides,
     },
     subjects,

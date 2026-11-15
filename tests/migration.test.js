@@ -15,7 +15,7 @@ test('旧版 Openverse 鞋袜配置会迁移到腿足 Safebooru', () => {
   const s = c.subjects.find((x) => x.id === 'shoes');
   assert.equal(s.provider, 'safebooru');
   assert.match(s.query, /thighhighs/);
-  assert.equal(c.version, 3);
+  assert.equal(c.version, 4);
 });
 
 test('看看 B 站 -> B站图片', () => {

@@ -8,7 +8,7 @@
 > 必须先安装 **鲸鲸 / Whale Girl**：<https://github.com/Banan1cee/whale_girl>
 > 当前适配：**4.1.2**。
 
-> **最新版：v1.2.0** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.0)
+> **最新版：v1.2.1** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.1)
 
 > 视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
 > 聊天互通补丁视频：<https://www.bilibili.com/video/BV1bhWv6GEU2/>
@@ -18,7 +18,7 @@
 - **按指令发图**：`来张美图`、`看看脚`、`来张风景`、`来张动漫少女`、`看看猫`…
 - **指定单一角色 + 属性组合**：`看看东海帝皇的脚`、`看看波奇酱的脚`、`来张东海帝皇的黑丝`；
   **不需要提前添加角色**：未配置的名字会用基础软件的模型自动翻译成 Safebooru tag 并缓存，16 个常见角色走内置兜底。
-- **每个聊天单独开关**：群聊 / 私聊分别控制，也可以逐个聊天勾选。
+- **每个聊天单独开关**：群聊 / 私聊默认都开，也可以逐个聊天勾选；旧版本私聊默认关闭，v1.2.1 起迁移为开启。
 - **同一张图不重复**：默认 24 小时内所有聊天共享去重记录，不会两个群收到同一张。
 - **类别可编辑**：名称、指令词、图库来源、搜索词都能改；可以新建「猫 / 美食 / 星空 / 腿足」等类别。
 - **正规安全图库**：

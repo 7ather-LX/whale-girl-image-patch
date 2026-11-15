@@ -1,6 +1,6 @@
 {
   "name": "whale-girl-image-patch",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "description": "WhaleGirl / 鲸鲸 的外挂补丁：在微信里按指令搜索正规安全图片并发送，支持按聊天/类别配置。",
   "main": "patch/index.js",
