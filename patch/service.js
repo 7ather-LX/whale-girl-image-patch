@@ -59,42 +59,47 @@ class ImageService {
     const llm = this.runtime && this.runtime.llm;
     if (!llm || typeof llm.complete !== 'function' || llm.isMock) return '';
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), 30000);
+    const baseSystem = [
+      '你是动漫角色名到 Safebooru/Danbooru 角色 tag 的转换器。',
+      '用户会给你中文、日文或英文昵称；输出对应的角色 tag。',
+      'tag 只能包含小写英文、数字、下划线，必要时可带括号，例如 tokai_teio、gotoh_hitori、rem_(re:zero)、mejiro_ardan_(umamusume)。',
+      '拼写必须准确；角色有系列时优先带系列后缀，例如 mejiro_ardan_(umamusume)。',
+      '只输出一个 tag，不要解释、不要 Markdown、不要引号。无法确定就输出 UNKNOWN。',
+      '示例：东海帝皇 => tokai_teio；波奇酱 => gotoh_hitori；雷姆 => rem_(re:zero)；目白阿尔丹 => mejiro_ardan_(umamusume)。',
+    ].join('\n');
     try {
-      const answer = await llm.complete({
-        system: [
-          '你是动漫角色名到 Safebooru/Danbooru 角色 tag 的转换器。',
-          '用户会给你中文、日文或英文昵称；输出对应的角色 tag。',
-          'tag 只能包含小写英文、数字、下划线，必要时可带括号，例如 tokai_teio、gotoh_hitori、rem_(re:zero)。',
-          '只输出一个 tag，不要解释、不要 Markdown、不要引号。无法确定就输出 UNKNOWN。',
-          '示例：东海帝皇 => tokai_teio；波奇酱 => gotoh_hitori；雷姆 => rem_(re:zero)。',
-        ].join('\n'),
-        turns: [{ role: 'user', content: key }],
-        maxTokens: 40,
-        thinking: false,
-        signal: controller.signal,
-        purpose: 'image-patch-character',
-      });
-      const tag = String(answer || '').trim().toLowerCase()
-        .replace(/^[`'"]+|[`'"]+$/g, '')
-        .replace(/[\s/]+/g, '_')
-        .replace(/[^a-z0-9_():-]+/g, '')
-        .slice(0, 80);
-      if (tag && tag !== 'unknown' && /^[a-z0-9_():-]+$/.test(tag)) {
+      let lastTag = '';
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const system = attempt === 0
+          ? baseSystem
+          : baseSystem + `\n上一次你输出了 ${lastTag}，但 Safebooru 没有这个 tag。请重新给出准确 tag（注意拼写和系列后缀）。`;
+        const answer = await llm.complete({
+          system,
+          turns: [{ role: 'user', content: key }],
+          maxTokens: 40,
+          thinking: false,
+          signal: controller.signal,
+          purpose: 'image-patch-character',
+        });
+        const tag = String(answer || '').trim().toLowerCase()
+          .replace(/^[`'"]+|[`'"]+$/g, '')
+          .replace(/[\s/]+/g, '_')
+          .replace(/[^a-z0-9_():-]+/g, '')
+          .slice(0, 80);
+        if (!tag || tag === 'unknown' || !/^[a-z0-9_():-]+$/.test(tag)) continue;
         let valid = true;
         try {
           valid = await providers.safebooruTag(tag, { timeout: 8000 });
-        } catch { /* 标签接口失败时先信任模型，搜图阶段还能兜底 */ }
-        if (!valid) {
-          this.characterCache[key] = { tag: '', at: Date.now(), name: String(name).slice(0, 60) };
+        } catch { /* 标签接口失败时先信任模型 */ }
+        if (valid) {
+          this.characterCache[key] = { tag, at: Date.now(), name: String(name).slice(0, 60) };
           this.saveCharacterCache();
-          this.logger.warn?.(`[image-patch] model tag not on Safebooru: ${name} -> ${tag}`);
-          return '';
+          this.logger.info?.(`[image-patch] auto character ${name} -> ${tag}`);
+          return tag;
         }
-        this.characterCache[key] = { tag, at: Date.now(), name: String(name).slice(0, 60) };
-        this.saveCharacterCache();
-        this.logger.info?.(`[image-patch] auto character ${name} -> ${tag}`);
-        return tag;
+        lastTag = tag;
+        this.logger.warn?.(`[image-patch] model tag not on Safebooru: ${name} -> ${tag}`);
       }
       this.characterCache[key] = { tag: '', at: Date.now(), name: String(name).slice(0, 60) };
       this.saveCharacterCache();
