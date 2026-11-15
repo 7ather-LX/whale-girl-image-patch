@@ -65,26 +65,52 @@ function parse(text, config) {
 
   let subject = null;
   let character = null;
-  let attributes = [];
+  let attributes = cfg.findAttributes(config, subjectText);
+  let objectText = subjectText;
   if (subjectText) {
     character = cfg.findCharacter(config, subjectText);
     if (character) {
-      attributes = cfg.findAttributes(config, subjectText);
       subject = cfg.characterSubject(character, attributes);
     }
   }
-  if (!subject && subjectText) subject = cfg.findSubject(config, subjectText);
+  if (subjectText && !character) {
+    // 去掉属性词，剩下的就是“角色/对象”候选，交给自动识别。
+    for (const a of attributes) {
+      for (const alias of a.aliases || []) {
+        if (!alias) continue;
+        objectText = objectText.split(alias).join(' ');
+      }
+    }
+    objectText = stripFillers(objectText.replace(/[的图照片图片美图]+$/g, ''));
+  }
+  if (!subject && subjectText) {
+    // 先判断去掉属性词后剩下的是不是某个已配置类别；不是的话，交给自动角色识别。
+    if (!character && objectText && !cfg.findSubject(config, objectText)) {
+      return {
+        ok: true,
+        matched,
+        subjectText,
+        objectText,
+        attributes,
+        subject: null,
+        unknownSubject: objectText,
+      };
+    }
+    subject = cfg.findSubject(config, subjectText);
+  }
   if (!subject && /美图|图片|图/.test(matched + subjectText)) subject = cfg.defaultSubject(config);
   if (!subject) {
     return {
       ok: true,
       matched,
       subjectText,
+      objectText,
+      attributes,
       subject: null,
       unknownSubject: subjectText || '',
     };
   }
-  return { ok: true, matched, subjectText, subject, character, attributes };
+  return { ok: true, matched, subjectText, objectText, subject, character, attributes };
 }
 
 module.exports = { parse, cleanInput, stripFillers };

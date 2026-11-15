@@ -22,7 +22,108 @@ class ImageService {
     this.lastError = '';
     this.fetchBusy = false;
     this.historyFile = path.join(this.root, 'data', 'whale-image-patch-history.json');
+    this.characterCacheFile = path.join(this.root, 'data', 'whale-image-patch-characters.json');
+    this.characterCache = this.loadCharacterCache();
     this.history = this.loadHistory();
+  }
+
+  loadCharacterCache() {
+    try {
+      const data = JSON.parse(fs.readFileSync(this.characterCacheFile, 'utf8'));
+      return data && typeof data.items === 'object' ? data.items : {};
+    } catch {
+      return {};
+    }
+  }
+
+  saveCharacterCache() {
+    try {
+      const entries = Object.entries(this.characterCache || {})
+        .sort((a, b) => Number(b[1].at || 0) - Number(a[1].at || 0))
+        .slice(0, 300);
+      this.characterCache = Object.fromEntries(entries);
+      fs.mkdirSync(path.dirname(this.characterCacheFile), { recursive: true });
+      const tmp = this.characterCacheFile + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify({ version: 1, items: this.characterCache }, null, 2), 'utf8');
+      fs.renameSync(tmp, this.characterCacheFile);
+    } catch (err) {
+      this.logger.warn?.('[image-patch] character cache save failed: ' + (err && err.message || err));
+    }
+  }
+
+  async resolveCharacterTag(name) {
+    const key = String(name || '').toLowerCase().trim();
+    if (!key) return '';
+    const hit = this.characterCache[key];
+    if (hit && Date.now() - Number(hit.at || 0) < 30 * 24 * 3600 * 1000) return hit.tag || '';
+    const llm = this.runtime && this.runtime.llm;
+    if (!llm || typeof llm.complete !== 'function' || llm.isMock) return '';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const answer = await llm.complete({
+        system: [
+          '你是动漫角色名到 Safebooru/Danbooru 角色 tag 的转换器。',
+          '用户会给你中文、日文或英文昵称；输出对应的角色 tag。',
+          'tag 只能包含小写英文、数字、下划线，必要时可带括号，例如 tokai_teio、gotoh_hitori、rem_(re:zero)。',
+          '只输出一个 tag，不要解释、不要 Markdown、不要引号。无法确定就输出 UNKNOWN。',
+          '示例：东海帝皇 => tokai_teio；波奇酱 => gotoh_hitori；雷姆 => rem_(re:zero)。',
+        ].join('\n'),
+        turns: [{ role: 'user', content: key }],
+        maxTokens: 40,
+        thinking: false,
+        signal: controller.signal,
+        purpose: 'image-patch-character',
+      });
+      const tag = String(answer || '').trim().toLowerCase()
+        .replace(/^[`'"]+|[`'"]+$/g, '')
+        .replace(/[\s/]+/g, '_')
+        .replace(/[^a-z0-9_():-]+/g, '')
+        .slice(0, 80);
+      if (tag && tag !== 'unknown' && /^[a-z0-9_():-]+$/.test(tag)) {
+        this.characterCache[key] = { tag, at: Date.now(), name: String(name).slice(0, 60) };
+        this.saveCharacterCache();
+        this.logger.info?.(`[image-patch] auto character ${name} -> ${tag}`);
+        return tag;
+      }
+      this.characterCache[key] = { tag: '', at: Date.now(), name: String(name).slice(0, 60) };
+      this.saveCharacterCache();
+      return '';
+    } catch (err) {
+      this.logger.warn?.('[image-patch] auto character resolve failed: ' + (err && err.message || err));
+      return '';
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async dynamicSubject(objectText, attributes) {
+    const name = String(objectText || '').trim().slice(0, 60);
+    if (!name) return null;
+    const tag = await this.resolveCharacterTag(name);
+    if (tag) {
+      return cfgmod.characterSubject({
+        id: 'dynamic-' + this.hashOf(name).slice(0, 10),
+        name,
+        aliases: [name],
+        tag,
+        enabled: true,
+      }, attributes);
+    }
+    // 模型不可用 / 认不出：退回 B 站搜索中文名，至少能发相关封面。
+    const labels = attributes.map((a) => a.label).filter(Boolean);
+    return {
+      id: 'dynamic-' + this.hashOf(name).slice(0, 10),
+      name: name + (labels.length ? ' · ' + labels.join('/') : ''),
+      provider: 'bilibili',
+      query: [name, ...labels].join(' '),
+      fallbackQueries: [name],
+      minWidth: 400,
+      minHeight: 300,
+      minScore: 0,
+      dynamic: true,
+      enabled: true,
+    };
   }
 
   reload() {
@@ -266,10 +367,21 @@ class ImageService {
       }
       return null;
     }
+    let subject = parsed.subject;
     if (parsed.unknownSubject !== undefined) {
-      return { reply: `还没有配置「${parsed.unknownSubject || '这个'}」这个类别，去图片补丁页面加一个吧。`, reason: 'unknown_subject' };
+      if (!config.autoCharacter) {
+        return { reply: `还没有配置「${parsed.unknownSubject || '这个'}」这个角色，去图片管理页加一个，或打开「自动识别角色」。`, reason: 'unknown_subject' };
+      }
+      try {
+        subject = await this.dynamicSubject(parsed.objectText || parsed.unknownSubject, parsed.attributes || []);
+      } catch (err) {
+        this.logger.warn?.('[image-patch] dynamic character failed: ' + (err && err.message || err));
+      }
+      if (!subject) {
+        return { reply: `没认出「${parsed.objectText || parsed.unknownSubject || '这个角色'}」对应的图库 tag，可以在图片管理页手动加一个。`, reason: 'unknown_subject' };
+      }
+      this.logger.info?.(`[image-patch] dynamic subject=${subject.id} query=${subject.query}`);
     }
-    const subject = parsed.subject;
     if (!subject) return null;
     if (this.hourlyCount() >= (Number(config.maxPerHour) || 30)) {
       return { reply: '今天图片发得有点多，先歇一会儿～', reason: 'rate_limited' };

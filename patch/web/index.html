@@ -67,11 +67,12 @@
       <div class="row">
         <div>
           <h2>角色对象</h2>
-          <p class="muted">指定到单个角色：名称 / 别名会匹配指令，tag 用 Safebooru 角色标签。
-            例如「看看东海帝皇的脚」= 角色 + 足部属性。</p>
+          <p class="muted">不用提前添加：直接说角色名，补丁会用模型自动翻译成 Safebooru tag 并缓存。
+            这里只是给常用角色固定名称 / 别名 / tag。例如「看看东海帝皇的脚」= 角色 + 足部属性。</p>
         </div>
         <button id="addCharacter" class="ghost">+ 新建角色</button>
       </div>
+      <label class="check"><input id="autoCharacter" type="checkbox"> 自动识别未配置角色（用模型翻译 Safebooru tag，并缓存）</label>
       <div id="characters" class="subjects"></div>
     </section>
 

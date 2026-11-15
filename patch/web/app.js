@@ -268,6 +268,7 @@ function fillForm() {
   $('#maxPerHour').value = state.config.maxPerHour;
   $('#noRepeat').value = state.config.noRepeatMinutes;
   $('#replyText').checked = state.config.replyText !== false;
+  $('#autoCharacter').checked = state.config.autoCharacter !== false;
   renderCharacters();
   renderSubjects();
   renderTestSelect();
@@ -303,6 +304,7 @@ async function save() {
   state.config.maxPerHour = Number($('#maxPerHour').value) || 30;
   state.config.noRepeatMinutes = Number($('#noRepeat').value) || 1440;
   state.config.replyText = $('#replyText').checked;
+  state.config.autoCharacter = $('#autoCharacter').checked;
   try {
     const data = await api('/api/image-patch/config', {
       method: 'POST',
@@ -353,6 +355,9 @@ function bind() {
   $('#save').addEventListener('click', save);
   $('#enabled').addEventListener('change', () => {
     if (state.config) state.config.enabled = $('#enabled').checked;
+  });
+  $('#autoCharacter').addEventListener('change', () => {
+    if (state.config) state.config.autoCharacter = $('#autoCharacter').checked;
   });
   $('#groups').addEventListener('change', () => {
     if (!state.config) return;

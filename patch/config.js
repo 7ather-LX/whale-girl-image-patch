@@ -118,6 +118,7 @@ function defaults() {
     subjects: DEFAULT_SUBJECTS.map((s) => ({ ...s, aliases: s.aliases.slice() })),
     characters: DEFAULT_CHARACTERS.map((s) => ({ ...s, aliases: s.aliases.slice() })),
     attributes: DEFAULT_ATTRIBUTES.map((s) => ({ ...s, aliases: s.aliases.slice(), tags: s.tags.slice() })),
+    autoCharacter: true,
     providers: Object.keys(PROVIDERS),
     theme: 'auto',
   };
@@ -249,6 +250,7 @@ function normalize(raw) {
     subjects,
     characters,
     attributes,
+    autoCharacter: bool(src.autoCharacter, d.autoCharacter),
     providers: Object.keys(PROVIDERS),
     theme: src.theme === 'light' ? 'light' : 'auto',
   };

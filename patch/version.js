@@ -2,6 +2,6 @@
 
 module.exports = {
   name: 'whale-image-patch',
-  version: '1.1.0',
+  version: '1.2.0',
   base: '4.1.2',
 };
