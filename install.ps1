@@ -187,7 +187,8 @@ if (Test-Path $portFile) {
 
 Step "6/6 Install launcher tab (optional)"
 if (-not $SkipLauncher) {
-  $launcherSrc = Join-Path $here "launcher\WhaleLauncher.exe"
+  $launcherSrcDir = Join-Path $here "launcher\files"
+  $launcherSrc = Join-Path $launcherSrcDir "WhaleLauncher.exe"
   $launcherDst = Join-Path $AppRoot "WhaleLauncher.exe"
   $wanted = ""
   try { $wanted = (Get-Content (Join-Path $here "launcher\version.txt") -Raw).Trim() } catch { }
@@ -200,6 +201,13 @@ if (-not $SkipLauncher) {
       try { Copy-Item $launcherDst $backup -Force; Info "launcher backup: $backup" } catch { Info "launcher backup failed: $($_.Exception.Message)" }
     }
     $installed = $false
+    # 先复制依赖（DLL / runtimeconfig / runtimes），再替换 exe；exe 被占用时改名后放新的。
+    Get-ChildItem $launcherSrcDir -Recurse -File | Where-Object { $_.Name -ne "WhaleLauncher.exe" } | ForEach-Object {
+      $rel = $_.FullName.Substring($launcherSrcDir.Length).TrimStart('\')
+      $target = Join-Path $AppRoot $rel
+      New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+      try { Copy-Item $_.FullName $target -Force } catch { }
+    }
     try {
       Copy-Item $launcherSrc $launcherDst -Force
       $installed = $true
