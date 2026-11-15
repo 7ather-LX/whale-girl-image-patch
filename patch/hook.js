@@ -17,6 +17,7 @@ function serviceFor(bot) {
       root: bot.config && bot.config.root,
       bot,
       logger: bot.logger || console,
+      llm: bot.llm,
     });
     services.set(bot, svc);
     return svc;
