@@ -300,6 +300,7 @@ function findCharacter(cfg, text) {
     for (const a of c.aliases || []) {
       const alias = String(a).toLowerCase().trim();
       if (!alias) continue;
+      if (/^[a-z0-9]{1,2}$/.test(alias) && needle !== alias) continue;
       if (needle === alias || needle.includes(alias)) {
         if (!best || alias.length > best.alias.length) best = { character: c, alias };
       }
