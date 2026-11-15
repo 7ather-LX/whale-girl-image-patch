@@ -89,6 +89,13 @@ async function wikimedia(query, { timeout = 12000, limit = 12 } = {}) {
   return out;
 }
 
+async function safebooruTag(name, { timeout = 10000 } = {}) {
+  const q = new URLSearchParams({ page: 'dapi', s: 'tag', q: 'index', json: '1', limit: '20', name: String(name || '') });
+  const xml = await getText(SAFEBOORU + '?' + q.toString(), { timeout });
+  const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`<tag\\b[^>]*\\bname="${escaped}"`, 'i').test(xml);
+}
+
 async function safebooru(query, { timeout = 12000, limit = 20, page = 1, minWidth = 500, minHeight = 500, minScore = 0 } = {}) {
   const tags = `rating:safe ${query} -swimsuit -bikini -lingerie -underwear -cleavage -panties -nude -topless -loli -child -shota -spread_legs -sex -cum -ass -shoes -sneakers -boots`;
   const q = new URLSearchParams({
@@ -140,11 +147,12 @@ async function bilibili(query, { timeout = 12000, limit = 12, page = 1 } = {}) {
     const hash = m[2];
     if (seen.has(hash)) continue;
     seen.add(hash);
-    // 672x378 的 B 站封面缩放版本，体积小且稳定；原图太大。
-    const url = `https://i${m[1]}.hdslb.com/bfs/archive/${hash}.jpg@672w_378h_1c.webp`;
+    // 取原图 .jpg，而不是 @672w...webp：微信语音/表情通道对 webp 支持不稳定，
+    // 过去会变成“文件”而不是图片。
+    const url = `https://i${m[1]}.hdslb.com/bfs/archive/${hash}.jpg`;
     out.push({
       url,
-      thumb: url,
+      thumb: '',
       title: text(query + ' · B站视频封面'),
       creator: '',
       license: '版权归原作者（仅个人聊天使用）',
@@ -188,4 +196,4 @@ async function search(subject, opts = {}) {
   return [];
 }
 
-module.exports = { search, openverse, wikimedia, safebooru, bilibili, LICENSE_LABEL };
+module.exports = { search, openverse, wikimedia, safebooru, safebooruTag, bilibili, LICENSE_LABEL };

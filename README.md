@@ -8,7 +8,7 @@
 > 必须先安装 **鲸鲸 / Whale Girl**：<https://github.com/Banan1cee/whale_girl>
 > 当前适配：**4.1.2**。
 
-> **最新版：v1.2.1** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.1)
+> **最新版：v1.2.2** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.2)
 
 > 视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
 > 聊天互通补丁视频：<https://www.bilibili.com/video/BV1bhWv6GEU2/>

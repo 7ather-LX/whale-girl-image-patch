@@ -81,6 +81,16 @@ class ImageService {
         .replace(/[^a-z0-9_():-]+/g, '')
         .slice(0, 80);
       if (tag && tag !== 'unknown' && /^[a-z0-9_():-]+$/.test(tag)) {
+        let valid = true;
+        try {
+          valid = await providers.safebooruTag(tag, { timeout: 8000 });
+        } catch { /* 标签接口失败时先信任模型，搜图阶段还能兜底 */ }
+        if (!valid) {
+          this.characterCache[key] = { tag: '', at: Date.now(), name: String(name).slice(0, 60) };
+          this.saveCharacterCache();
+          this.logger.warn?.(`[image-patch] model tag not on Safebooru: ${name} -> ${tag}`);
+          return '';
+        }
         this.characterCache[key] = { tag, at: Date.now(), name: String(name).slice(0, 60) };
         this.saveCharacterCache();
         this.logger.info?.(`[image-patch] auto character ${name} -> ${tag}`);
@@ -110,20 +120,8 @@ class ImageService {
         enabled: true,
       }, attributes);
     }
-    // 模型不可用 / 认不出：退回 B 站搜索中文名，至少能发相关封面。
-    const labels = attributes.map((a) => a.label).filter(Boolean);
-    return {
-      id: 'dynamic-' + this.hashOf(name).slice(0, 10),
-      name: name + (labels.length ? ' · ' + labels.join('/') : ''),
-      provider: 'bilibili',
-      query: name,
-      fallbackQueries: [name],
-      minWidth: 400,
-      minHeight: 300,
-      minScore: 0,
-      dynamic: true,
-      enabled: true,
-    };
+    // 没有可验证的 Safebooru tag 时宁可不发，避免把 B 站随机封面当成该角色。
+    return null;
   }
 
   reload() {
@@ -304,7 +302,8 @@ class ImageService {
       break;
     }
     // 主图库的图床整体打不开时，换一个来源再试一轮（Openverse 的 Flickr 图床经常 502）。
-    if (Date.now() - started < 50000) {
+    // 指定角色的请求不用 B 站封面兜底：中文搜索出来的封面经常不是该角色。
+    if (!subject.character && Date.now() - started < 50000) {
       const altProvider = subject.provider === 'bilibili' ? 'wikimedia' : 'bilibili';
       const altQuery = (subject.fallbackQueries && subject.fallbackQueries[0]) || subject.query;
       try {
@@ -378,7 +377,7 @@ class ImageService {
         this.logger.warn?.('[image-patch] dynamic character failed: ' + (err && err.message || err));
       }
       if (!subject) {
-        return { reply: `没认出「${parsed.objectText || parsed.unknownSubject || '这个角色'}」对应的图库 tag，可以在图片管理页手动加一个。`, reason: 'unknown_subject' };
+        return { reply: `没找到「${parsed.objectText || parsed.unknownSubject || '这个角色'}」在 Safebooru 的安全图库（可能没有这个角色 tag）。可以在图片管理页手动填一个确认存在的 tag。`, reason: 'unknown_subject' };
       }
       this.logger.info?.(`[image-patch] dynamic subject=${subject.id} query=${subject.query}`);
     }
