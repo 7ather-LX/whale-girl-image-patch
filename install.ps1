@@ -17,7 +17,7 @@ Write-Host ""
 Write-Host "WhaleGirl image-search patch installer" -ForegroundColor Cyan
 Write-Host "  This is a PATCH, not a standalone app. Install WhaleGirl first:" -ForegroundColor Yellow
 Write-Host "  https://github.com/Banan1cee/whale_girl"
-Write-Host "  Compatible base: WhaleGirl 4.1.2"
+Write-Host "  Compatible base: WhaleGirl 4.1.7.1"
 Write-Host ""
 
 function Find-AppRoot {
@@ -132,8 +132,8 @@ Info "target: $AppRoot"
 $version = ""
 try { $version = ([System.IO.File]::ReadAllText((Join-Path $AppRoot "package.json"), [System.Text.Encoding]::UTF8) | ConvertFrom-Json).version } catch { }
 Info "base version: $version"
-if ($version -and $version -ne "4.1.2") {
-  Write-Host "  [WARN] This build is tested with WhaleGirl 4.1.2; continuing anyway." -ForegroundColor Yellow
+if ($version -and $version -ne "4.1.7.1") {
+  Write-Host "  [WARN] This build is tested with WhaleGirl 4.1.7.1; continuing anyway." -ForegroundColor Yellow
 }
 
 Step "1/6 Check this patch package"
