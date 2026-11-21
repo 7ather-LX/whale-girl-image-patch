@@ -126,7 +126,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -AppRoot "D:\WhaleGirl"
 
 ## 兼容性
 
-- 适配鲸鲸 **4.1.2**（多文件启动器，带「补丁 / 图片」栏；Defender 扫描通过）。
+- 适配鲸鲸 **4.1.7.1**（多文件启动器，带「补丁 / 图片 / 生理」栏；Defender 扫描通过）。
 - 基础软件更新后，重新运行 `install.cmd`。
 - 旧版 4.0.8.2 不保证可用；如果只要服务端功能，用 `-SkipLauncher` 并手动打开管理页。
 
