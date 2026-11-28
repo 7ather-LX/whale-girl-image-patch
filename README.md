@@ -6,9 +6,9 @@
 > [!IMPORTANT]
 > **这是补丁，不是独立软件，单独下载不能运行。**
 > 必须先安装 **鲸鲸 / Whale Girl**：<https://github.com/Banan1cee/whale_girl>
-> 当前适配：**4.1.8**。
+> 当前适配：**4.2.0**。
 
-> **最新版：v1.2.4** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.4)
+> **最新版：v1.2.5** · [Release](https://github.com/7ather-LX/whale-girl-image-patch/releases/tag/v1.2.5)
 
 > 视频介绍（B站）：<https://www.bilibili.com/video/BV18QWi62E4r/>
 > 聊天互通补丁视频：<https://www.bilibili.com/video/BV1bhWv6GEU2/>
@@ -126,7 +126,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -AppRoot "D:\WhaleGirl"
 
 ## 兼容性
 
-- 适配鲸鲸 **4.1.8**（多文件启动器，带「补丁 / 图片 / 生理」栏；Defender 扫描通过）。
+- 适配鲸鲸 **4.2.0**（多文件启动器，带「补丁 / 图片 / 生理」栏；Defender 扫描通过）。
 - 基础软件更新后，重新运行 `install.cmd`。
 - 旧版 4.0.8.2 不保证可用；如果只要服务端功能，用 `-SkipLauncher` 并手动打开管理页。
 
